@@ -1,0 +1,14 @@
+{
+  "name": "egydahab-price-updater",
+  "version": "1.0.0",
+  "description": "GitHub Actions script that scrapes real local Egyptian gold/silver prices (iSagha) and currency rates (Frankfurter) every 15 minutes and writes prices.json.",
+  "main": "update-prices.js",
+  "scripts": {
+    "start": "node update-prices.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.18.1",
+    "cheerio": "^1.2.0"
+  }
+}
