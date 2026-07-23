@@ -1,24 +1,24 @@
 {
   "gold": {
     "k24": {
-      "sell": 6834.25,
-      "buy": 6777.25
+      "sell": 6817.25,
+      "buy": 6754.25
     },
     "k22": {
-      "sell": 6264.75,
-      "buy": 6212.5
+      "sell": 6249,
+      "buy": 6191.5
     },
     "k21": {
-      "sell": 5980,
-      "buy": 5930
+      "sell": 5965,
+      "buy": 5910
     },
     "k18": {
-      "sell": 5125.75,
-      "buy": 5082.75
+      "sell": 5112.75,
+      "buy": 5065.75
     },
     "goldPound": {
-      "sell": 47840,
-      "buy": 47440
+      "sell": 47720,
+      "buy": 47280
     }
   },
   "silver": {
@@ -48,37 +48,9 @@
     }
   },
   "currencies": {
-    "USD": {
-      "buy": 51.3,
-      "sell": 51.4
-    },
-    "SAR": {
-      "buy": 13.629,
-      "sell": 13.694
-    },
-    "KWD": {
-      "buy": 161.906,
-      "sell": 167.019
-    },
     "AED": {
       "buy": 13.954,
       "sell": 13.996
-    },
-    "EUR": {
-      "buy": 58.477,
-      "sell": 58.689
-    },
-    "CAD": {
-      "buy": 36.355,
-      "sell": 36.501
-    },
-    "GBP": {
-      "buy": 68.516,
-      "sell": 68.85
-    },
-    "CHF": {
-      "buy": 63.076,
-      "sell": 63.347
     },
     "AUD": {
       "buy": 35.813,
@@ -88,33 +60,71 @@
       "buy": 133.925,
       "sell": 136.332
     },
-    "QAR": {
-      "buy": 13.02,
-      "sell": 14.102
+    "CAD": {
+      "buy": 36.355,
+      "sell": 36.501
+    },
+    "CHF": {
+      "buy": 63.076,
+      "sell": 63.347
+    },
+    "EUR": {
+      "buy": 58.477,
+      "sell": 58.689
+    },
+    "GBP": {
+      "buy": 68.516,
+      "sell": 68.85
     },
     "JOD": {
       "buy": 71.523,
       "sell": 72.599
+    },
+    "KWD": {
+      "buy": 161.906,
+      "sell": 167.019
+    },
+    "LYD": {
+      "buy": 8.001280204832774,
+      "sell": 8.001280204832774
+    },
+    "QAR": {
+      "buy": 13.02,
+      "sell": 14.102
+    },
+    "SAR": {
+      "buy": 13.629,
+      "sell": 13.694
+    },
+    "TRY": {
+      "buy": 1.0862480990658268,
+      "sell": 1.0862480990658268
+    },
+    "USD": {
+      "buy": 51.3,
+      "sell": 51.4
     }
   },
   "currencySources": {
-    "USD": "nbe",
-    "SAR": "nbe",
-    "KWD": "nbe",
     "AED": "nbe",
-    "EUR": "nbe",
-    "CAD": "nbe",
-    "GBP": "nbe",
-    "CHF": "nbe",
     "AUD": "nbe",
     "BHD": "nbe",
+    "CAD": "nbe",
+    "CHF": "nbe",
+    "EUR": "nbe",
+    "GBP": "nbe",
+    "JOD": "nbe",
+    "KWD": "nbe",
+    "LYD": "frankfurter",
     "QAR": "nbe",
-    "JOD": "nbe"
+    "SAR": "nbe",
+    "TRY": "frankfurter",
+    "USD": "nbe"
   },
-  "goldSilverUpdatedAt": "2026-07-23T12:53:27.768Z",
-  "currenciesUpdatedAt": "2026-07-23T12:53:43.937Z",
+  "goldSilverUpdatedAt": "2026-07-23T14:57:04.725Z",
+  "currenciesUpdatedAt": "2026-07-23T14:57:06.563Z",
   "goldSilverStatus": "live",
   "currenciesStatus": "live",
-  "lastRunAt": "2026-07-23T12:53:43.938Z",
+  "lastRunAt": "2026-07-23T14:57:06.563Z",
   "note": "Seed data confirmed directly from market.isagha.com/prices/eg and egrates.com/en/banks/4 (National Bank of Egypt rates) on 2026-07-22. Switched currency source from CBE (blocked by their firewall, confirmed unusable) to NBE via egrates.com (verified real, working). Will be overwritten by the first GitHub Actions run."
 }
