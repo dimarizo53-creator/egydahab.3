@@ -98,13 +98,17 @@ async function scrapeISagha() {
     const label = $(cells[0]).text().trim();
     const sellText = $(cells[1]).text().trim();
 
-    if (GOLD_ROW_MAP[label]) {
+    // Only take the FIRST occurrence of each label. If the page has more than one table
+    // using the same row labels (e.g. a historical/comparison section further down), later
+    // matches are ignored — this guards against silently overwriting the correct current
+    // price with a stale or unrelated one from elsewhere on the page.
+    if (GOLD_ROW_MAP[label] && !gold[GOLD_ROW_MAP[label]]) {
       const buyText = $(cells[3]).text().trim();
       gold[GOLD_ROW_MAP[label]] = { sell: parseEgpNumber(sellText), buy: parseEgpNumber(buyText) };
-    } else if (SILVER_ROW_MAP[label]) {
+    } else if (SILVER_ROW_MAP[label] && !silver[SILVER_ROW_MAP[label]]) {
       const buyText = $(cells[3]).text().trim();
       silver[SILVER_ROW_MAP[label]] = { sell: parseEgpNumber(sellText), buy: parseEgpNumber(buyText) };
-    } else if (ISAGHA_CURRENCY_ROW_MAP[label]) {
+    } else if (ISAGHA_CURRENCY_ROW_MAP[label] && !isaghaCurrencies[ISAGHA_CURRENCY_ROW_MAP[label]]) {
       const buyText = $(cells[2]).text().trim();
       isaghaCurrencies[ISAGHA_CURRENCY_ROW_MAP[label]] = { sell: parseEgpNumber(sellText), buy: parseEgpNumber(buyText) };
     }

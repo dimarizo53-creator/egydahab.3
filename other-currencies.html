@@ -26,8 +26,7 @@
   header{display:flex;justify-content:space-between;align-items:center;padding:30px 0 22px;border-bottom:1px solid var(--border);margin-bottom:40px;flex-wrap:wrap;gap:12px;}
   .logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
   .logo-mark{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,var(--gold-bright),var(--gold) 75%);box-shadow:0 3px 12px rgba(184,134,11,.32);}
-  .logo-text{font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:.5px;color:var(--ink);}
-  html[lang="en"] .logo-text{color:var(--teal);}
+  .logo-text{font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:.5px;color:var(--teal);}
   .logo-text .sub{display:block;font-family:var(--font-display);font-weight:800;font-size:11.5px;color:var(--teal);letter-spacing:1.2px;text-transform:uppercase;}
   .live-dot{display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-weight:700;font-size:12px;color:var(--up);}
   .live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--up);}
@@ -176,6 +175,16 @@ const currencies = [
   {code:'CHF', flag:'ch', name_ar:'الفرنك السويسري', name_en:'Swiss Franc', country_ar:'سويسرا', country_en:'Switzerland'}
 ];
 const PRICES_JSON_URL = 'https://raw.githubusercontent.com/dimarizo53-creator/egydahab.3/main/prices.json';
+
+async function fetchWithTimeout(url, ms = 12000){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try{
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 const FALLBACK = {
   AUD:{buy:33.6,sell:33.9}, LYD:{buy:10.55,sell:10.70}, TRY:{buy:1.21,sell:1.23}, CHF:{buy:63.8,sell:64.3}
 };
@@ -183,7 +192,7 @@ let state = { currencyPrices:{}, live:false };
 
 async function fetchCurrent(){
   try{
-    const res = await fetch(`${PRICES_JSON_URL}?t=${Date.now()}`);
+    const res = await fetchWithTimeout(`${PRICES_JSON_URL}?t=${Date.now()}`, 12000);
     if(!res.ok) throw new Error('bad response');
     const data = await res.json();
     if(!data.currencies || !data.currencies.AUD) throw new Error('missing AUD data');

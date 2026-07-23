@@ -71,8 +71,7 @@
     background:linear-gradient(145deg,var(--gold-bright),var(--gold) 75%);
     box-shadow:0 3px 12px rgba(184,134,11,.32);
   }
-  .logo-text{font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:.3px;color:var(--ink);-webkit-text-stroke:.3px var(--ink);}
-  html[lang="en"] .logo-text{color:var(--teal);-webkit-text-stroke:.3px var(--teal);}
+  .logo-text{font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:.3px;color:var(--teal);-webkit-text-stroke:.3px var(--teal);}
   .logo-text .sub{display:block;font-family:var(--font-display);font-weight:800;font-size:11.5px;color:var(--teal);letter-spacing:1.2px;text-transform:uppercase;}
   .header-right{display:flex;align-items:center;gap:14px;}
   .live-dot{display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-weight:700;font-size:12px;color:var(--up);letter-spacing:.5px;}
@@ -157,8 +156,8 @@
   .section-title{font-family:var(--font-body);font-size:14px;color:var(--teal);letter-spacing:.5px;margin-bottom:18px;display:flex;align-items:center;gap:9px;font-weight:800;}
   .section-icon{width:17px;height:17px;stroke:var(--teal);flex-shrink:0;}
   .section-live-tag{
-    font-family:var(--font-mono);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;
-    letter-spacing:.5px;text-transform:uppercase;
+    font-family:var(--font-body);font-size:11px;font-weight:800;padding:2px 9px;border-radius:10px;
+    letter-spacing:.2px;
   }
   .section-live-tag.live{background:rgba(30,142,90,.12);color:var(--up);}
   .section-live-tag.stale{background:rgba(139,58,58,.1);color:var(--down);}
@@ -583,6 +582,19 @@ const OUNCE_TO_GRAM = 31.1034768;
 const LOCAL_GOLD_PREMIUM = 1.021;
 const API = 'https://api.frankfurter.dev/v2/rates';
 
+// Wraps fetch with a hard timeout so a slow/hanging network request can never leave the
+// UI stuck on "Loading..." forever — browsers don't time out fetch() by themselves.
+async function fetchWithTimeout(url, ms = 12000){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try{
+    const res = await fetch(url, { signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 let state = { currencyPrices: {} }; // currencyPrices[code] = { buy, sell } EGP per 1 unit
 
 function parseFrankfurterResponse(data){
@@ -623,7 +635,7 @@ const CURRENCIES_FALLBACK = {
 async function fetchCurrent(){
   try{
     // Cache-bust so the browser doesn't keep serving an old cached copy of the JSON file
-    const res = await fetch(`${PRICES_JSON_URL}?t=${Date.now()}`);
+    const res = await fetchWithTimeout(`${PRICES_JSON_URL}?t=${Date.now()}`, 12000);
     if(!res.ok) throw new Error('prices.json not reachable');
     const data = await res.json();
 
@@ -844,13 +856,17 @@ function assetToQuoteBase(assetKey){
   return {base:assetKey, quote:'EGP', purity:null};
 }
 
+let mainChartRequestId = 0; // guards against a slow older request overwriting a newer one
+
 async function loadChart(){
+  const thisRequestId = ++mainChartRequestId;
   const loadingEl = document.getElementById('chartLoading');
   const svgEl = document.getElementById('chartSvg');
   const rangeEl = document.getElementById('chartRange');
   const noteEl = document.getElementById('chartNote');
   const t = dict[lang];
   loadingEl.style.display = 'block';
+  loadingEl.textContent = t.chartLoading;
   svgEl.style.display = 'none';
   rangeEl.style.display = 'none';
 
@@ -860,7 +876,9 @@ async function loadChart(){
   try{
     let url = `${API}?base=${base}&quotes=${quote}&from=${from}&to=${to}`;
     if(group) url += `&group=${group}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, 12000);
+    if(thisRequestId !== mainChartRequestId) return; // superseded by a newer request
+    if(!res.ok) throw new Error('bad response status: ' + res.status);
     const data = await res.json();
     let points = [];
     if(Array.isArray(data)){
@@ -874,18 +892,12 @@ async function loadChart(){
 
     if(points.length < 2){
       chartHover.active = false;
-      loadingEl.textContent = lang==='ar' ? 'تعذر تحميل البيانات' : 'Could not load data';
+      loadingEl.textContent = lang==='ar' ? 'تعذر تحميل البيانات — حاول اختيار فترة أخرى' : 'Could not load data — try a different time range';
       loadingEl.style.display = 'block';
       return;
     }
 
-    // base is EGP-per-unit-of-base already? base=XAU/currency, quote=EGP => rate = EGP per 1 unit of base
-    let values = points.map(p => {
-      let v = 1 / (1/p.value); // rate already EGP per unit of base since base=XAU,quote=EGP means rate = EGP per XAU
-      return v;
-    });
-    // Actually rate returned = quote per base = EGP per 1 unit of base. That's exactly what we want.
-    values = points.map(p => p.value);
+    let values = points.map(p => p.value);
     if(purity !== null){
       values = values.map(v => (v / OUNCE_TO_GRAM) * purity * LOCAL_GOLD_PREMIUM);
     }
@@ -897,6 +909,8 @@ async function loadChart(){
       const y = (h+pad) - ((v-min)/((max-min)||1)) * h - pad;
       return `${i===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
+
+    if(thisRequestId !== mainChartRequestId) return; // check again right before touching the DOM
 
     chartHover.points = points;
     chartHover.values = values;
@@ -926,8 +940,9 @@ async function loadChart(){
 
     noteEl.textContent = currentTimeframe === 'day' ? t.day24note : t.chartSourceNote;
   }catch(e){
+    if(thisRequestId !== mainChartRequestId) return;
     chartHover.active = false;
-    loadingEl.textContent = lang==='ar' ? 'تعذر تحميل البيانات' : 'Could not load data';
+    loadingEl.textContent = lang==='ar' ? 'تعذر تحميل البيانات — حاول اختيار فترة أخرى' : 'Could not load data — try a different time range';
     loadingEl.style.display = 'block';
   }
 }
@@ -993,8 +1008,11 @@ document.addEventListener('keydown', (e) => {
   if(e.key === 'Escape' && modalAsset) closeAssetModal();
 });
 
+let modalChartRequestId = 0; // guards against a slow older request overwriting a newer one
+
 async function loadModalChart(){
   if(!modalAsset) return;
+  const thisRequestId = ++modalChartRequestId;
   const loadingEl = document.getElementById('modalChartLoading');
   const svgEl = document.getElementById('modalChartSvg');
   const rangeEl = document.getElementById('modalChartRange');
@@ -1007,18 +1025,25 @@ async function loadModalChart(){
   const {base, quote, purity} = assetToQuoteBase(modalAsset);
   const {from, to, group} = timeframeRange(modalTimeframe);
 
+  const showError = () => {
+    if(thisRequestId !== modalChartRequestId) return; // a newer request has since started; don't clobber its result
+    loadingEl.textContent = lang==='ar' ? 'تعذر تحميل البيانات — حاول اختيار فترة أخرى' : 'Could not load data — try a different time range';
+    loadingEl.style.display = 'block';
+    svgEl.style.display = 'none';
+    rangeEl.style.display = 'none';
+  };
+
   try{
     let url = `${API}?base=${base}&quotes=${quote}&from=${from}&to=${to}`;
     if(group) url += `&group=${group}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, 12000);
+    if(thisRequestId !== modalChartRequestId) return; // superseded by a newer request while we were waiting
+    if(!res.ok) throw new Error('bad response status: ' + res.status);
     const data = await res.json();
     let points = Array.isArray(data) ? data.map(rec => ({date:rec.date, value:rec.rate})).filter(p=>p.value) : [];
     points.sort((a,b) => a.date.localeCompare(b.date));
 
-    if(points.length < 2){
-      loadingEl.textContent = lang==='ar' ? 'تعذر تحميل البيانات' : 'Could not load data';
-      return;
-    }
+    if(points.length < 2){ showError(); return; }
 
     let values = points.map(p => p.value);
     if(purity !== null){
@@ -1032,6 +1057,8 @@ async function loadModalChart(){
       const y = (h+pad) - ((v-min)/((max-min)||1)) * h - pad;
       return `${i===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
+
+    if(thisRequestId !== modalChartRequestId) return; // check again right before touching the DOM
 
     svgEl.innerHTML = `
       <defs>
@@ -1049,7 +1076,7 @@ async function loadModalChart(){
     rangeEl.innerHTML = `<span>${points[0].date} · ${fmt(values[0])} ${t.unit}</span><span>${points[points.length-1].date} · ${fmt(values[values.length-1])} ${t.unit}</span>`;
     rangeEl.style.display = 'flex';
   }catch(e){
-    loadingEl.textContent = lang==='ar' ? 'تعذر تحميل البيانات' : 'Could not load data';
+    showError();
   }
 }
 
