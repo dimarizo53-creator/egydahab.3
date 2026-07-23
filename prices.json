@@ -101,10 +101,10 @@
     "SAR": "nbe",
     "USD": "nbe"
   },
-  "goldSilverUpdatedAt": "2026-07-23T06:18:03.935Z",
-  "currenciesUpdatedAt": "2026-07-23T06:18:05.223Z",
+  "goldSilverUpdatedAt": "2026-07-23T09:04:11.641Z",
+  "currenciesUpdatedAt": "2026-07-23T09:04:12.691Z",
   "goldSilverStatus": "live",
   "currenciesStatus": "live",
-  "lastRunAt": "2026-07-23T06:18:05.223Z",
+  "lastRunAt": "2026-07-23T09:04:12.691Z",
   "note": "Seed data confirmed directly from market.isagha.com/prices/eg and egrates.com/en/banks/4 (National Bank of Egypt rates) on 2026-07-22. Switched currency source from CBE (blocked by their firewall, confirmed unusable) to NBE via egrates.com (verified real, working). Will be overwritten by the first GitHub Actions run."
 }
