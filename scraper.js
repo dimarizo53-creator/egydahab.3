@@ -27,7 +27,7 @@ const ISAGHA_URL = 'https://market.isagha.com/prices/eg'; // Egypt-specific — 
 const FRANKFURTER_URL = 'https://api.frankfurter.dev/v2/rates';
 const NBE_URL = 'https://egrates.com/en/banks/4'; // National Bank of Egypt rates, via egrates.com
 
-const CURRENCY_CODES = ['USD', 'GBP', 'EUR', 'SAR', 'AED', 'JOD', 'KWD', 'CAD', 'BHD', 'QAR'];
+const CURRENCY_CODES = ['USD', 'GBP', 'EUR', 'SAR', 'AED', 'JOD', 'KWD', 'CAD', 'BHD', 'QAR', 'AUD', 'LYD', 'TRY', 'CHF'];
 
 // iSagha's currency table only covers these 4 (confirmed on the live page), but what it
 // does cover is real local buy/sell — more useful than a single blended rate.

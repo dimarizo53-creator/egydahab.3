@@ -27,6 +27,7 @@
   .logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
   .logo-mark{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,var(--gold-bright),var(--gold) 75%);box-shadow:0 3px 12px rgba(184,134,11,.32);}
   .logo-text{font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:.5px;color:var(--ink);}
+  html[lang="en"] .logo-text{color:var(--teal);}
   .logo-text .sub{display:block;font-family:var(--font-display);font-weight:800;font-size:11.5px;color:var(--teal);letter-spacing:1.2px;text-transform:uppercase;}
   .live-dot{display:flex;align-items:center;gap:6px;font-family:var(--font-body);font-weight:700;font-size:12px;color:var(--up);}
   .live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--up);}
@@ -63,6 +64,10 @@
   .fx-name{font-family:var(--font-body);font-weight:700;font-size:15px;color:var(--ink);margin-top:4px;}
   .fx-country{font-family:var(--font-body);font-weight:600;font-size:12px;color:var(--ink-muted);}
   .fx-value{font-family:var(--font-display);font-weight:700;font-size:22px;direction:ltr;color:var(--teal-deep);margin-top:6px;}
+  .fx-buysell{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
+  .fx-buysell > div{display:flex;justify-content:space-between;align-items:baseline;direction:ltr;}
+  .fx-bs-label{font-family:var(--font-body);font-weight:800;font-size:11px;color:var(--ink-muted);}
+  .fx-bs-value{font-family:var(--font-display);font-weight:900;font-size:16px;color:var(--teal-deep);}
   .fx-unit{font-size:13px;color:var(--ink-muted);font-family:var(--font-body);font-weight:800;}
   footer{text-align:center;padding-top:24px;margin-top:48px;border-top:1px solid var(--border);}
   .copyright-line{font-family:var(--font-body);font-weight:600;font-size:11.5px;color:var(--ink-muted);}
@@ -126,6 +131,7 @@
 const dict = {
   ar: {
     brand: 'إيجي دهب<span class="sub">Egydahab</span>',
+    buyLabel: 'شراء', sellLabel: 'بيع',
     contactLabel: 'تواصل معنا',
     menuHome: 'الرئيسية', menuAbout: 'من نحن', menuArticles: 'المقالات', menuContact: 'تواصل معنا',
     menuPrivacy: 'سياسة الخصوصية', menuTerms: 'الشروط والأحكام', menuDisclaimer: 'إخلاء المسؤولية',
@@ -138,6 +144,7 @@ const dict = {
   },
   en: {
     brand: 'Egydahab<span class="sub">إيجي دهب</span>',
+    buyLabel: 'Buy', sellLabel: 'Sell',
     contactLabel: 'Contact',
     menuHome: 'Home', menuAbout: 'About Us', menuArticles: 'Articles', menuContact: 'Contact',
     menuPrivacy: 'Privacy Policy', menuTerms: 'Terms & Conditions', menuDisclaimer: 'Disclaimer',
@@ -168,25 +175,22 @@ const currencies = [
   {code:'TRY', flag:'tr', name_ar:'الليرة التركية', name_en:'Turkish Lira', country_ar:'تركيا', country_en:'Turkey'},
   {code:'CHF', flag:'ch', name_ar:'الفرنك السويسري', name_en:'Swiss Franc', country_ar:'سويسرا', country_en:'Switzerland'}
 ];
-const API = 'https://api.frankfurter.dev/v2/rates';
-let state = { egpPerUnit:{}, live:false };
+const PRICES_JSON_URL = 'https://raw.githubusercontent.com/dimarizo53-creator/egydahab.3/main/prices.json';
+const FALLBACK = {
+  AUD:{buy:33.6,sell:33.9}, LYD:{buy:10.55,sell:10.70}, TRY:{buy:1.21,sell:1.23}, CHF:{buy:63.8,sell:64.3}
+};
+let state = { currencyPrices:{}, live:false };
 
 async function fetchCurrent(){
   try{
-    const codes = currencies.map(c=>c.code).join(',');
-    const res = await fetch(`${API}?base=EGP&quotes=${codes}`);
+    const res = await fetch(`${PRICES_JSON_URL}?t=${Date.now()}`);
     if(!res.ok) throw new Error('bad response');
     const data = await res.json();
-    const result = {};
-    if(Array.isArray(data)){
-      for(const rec of data){ if(rec.rate) result[rec.quote] = 1/rec.rate; }
-    }
-    if(!result.AUD) throw new Error('incomplete');
-    state.egpPerUnit = result;
-    state.live = true;
+    if(!data.currencies || !data.currencies.AUD) throw new Error('missing AUD data');
+    state.currencyPrices = data.currencies;
+    state.live = data.currenciesStatus === 'live';
   }catch(e){
-    // Offline fallback, calibrated estimates as of 2026-07-18
-    state.egpPerUnit = { AUD:32.9, LYD:10.41, TRY:1.49, CHF:61.6 };
+    state.currencyPrices = FALLBACK;
     state.live = false;
   }
 }
@@ -194,7 +198,7 @@ async function fetchCurrent(){
 function renderFx(){
   const t = dict[lang];
   document.getElementById('fxGrid').innerHTML = currencies.map(c => {
-    const v = state.egpPerUnit[c.code];
+    const p = state.currencyPrices[c.code];
     const name = lang === 'ar' ? c.name_ar : c.name_en;
     const country = lang === 'ar' ? c.country_ar : c.country_en;
     return `
@@ -202,7 +206,10 @@ function renderFx(){
       <div class="fx-top"><img class="fx-flag" src="https://flagcdn.com/w80/${c.flag}.png" alt="${c.code}" loading="lazy" onerror="handleFlagError(this,'${c.code}')"><span class="fx-code">${c.code}</span></div>
       <div class="fx-name">${name}</div>
       <div class="fx-country">${country}</div>
-      <div class="fx-value">${fmt(v)} <span class="fx-unit">${t.unit}</span></div>
+      <div class="fx-buysell">
+        <div><span class="fx-bs-label">${t.buyLabel}</span><span class="fx-bs-value">${fmt(p&&p.buy)}</span></div>
+        <div><span class="fx-bs-label">${t.sellLabel}</span><span class="fx-bs-value">${fmt(p&&p.sell)}</span></div>
+      </div>
     </div>`;
   }).join('');
 }
